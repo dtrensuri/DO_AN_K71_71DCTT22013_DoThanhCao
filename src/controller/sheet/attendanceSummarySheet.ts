@@ -1,10 +1,6 @@
-import { saveAs } from "file-saver";
-import { format, addDays } from "date-fns";
-
+import { format } from "date-fns";
+import { toHourAndMinute } from "@/controller/handleTime";
 const _ = require("lodash");
-const ExcelJS = require("exceljs");
-
-type AttendanceSummarySheet = {};
 
 type DataTimeSheetDetail = {};
 
@@ -13,10 +9,12 @@ const ngayLe = [
   { day: "2", month: "9", title: "Quốc Khánh" },
 ];
 
-const timeSheetDetail = async (data: DataTimeSheetDetail, fileName: string) => {
-  const workbook = new ExcelJS.Workbook();
-  workbook.calcProperties.fullCalcOnLoad = true;
-  const worksheet = workbook.addWorksheet("Bảng chi tiết chấm công");
+const timeSheetDetail = async (
+  data: DataTimeSheetDetail,
+  fileName: string,
+  workbook: any
+) => {
+  const worksheet = workbook.addWorksheet(fileName);
   worksheet.getColumn("A").width = 15;
   worksheet.font = {
     name: "Arial",
@@ -222,23 +220,6 @@ const timeSheetDetail = async (data: DataTimeSheetDetail, fileName: string) => {
 
     const dayName = daysOfWeek[dayOfWeek];
 
-    if (value.ot != "") {
-      let ot_time = value.ot.split(":");
-      ot += 60 * parseInt(ot_time[0]) + parseInt(ot_time[1]);
-    }
-
-    if (value.late != "") {
-      slDiTre += 1;
-      let late_time = value.late.split(":");
-      spDiTre += 60 * parseInt(late_time[0]) + parseInt(late_time[1]);
-    }
-
-    if (value.early != "") {
-      slVeSom += 1 + 2;
-      let early_time = value.early.split(":");
-      spVeSom += 60 * parseInt(early_time[0]) + parseInt(early_time[1]);
-    }
-
     if (_.findKey(ngayLe, { day: date.getDate(), month: date.getMonth() })) {
       le += 1;
     } else if (dayName == "Chủ Nhật" || dayName == "Thứ Bảy") {
@@ -247,20 +228,34 @@ const timeSheetDetail = async (data: DataTimeSheetDetail, fileName: string) => {
       ngayThuong += 1;
     }
 
+    if (value.late > 0) {
+      slDiTre += 1;
+      spDiTre += value.late;
+    }
+
+    if (value.early > 0) {
+      slVeSom += 1;
+      spVeSom += value.early;
+    }
+
+    if (value.ot > 0) {
+      ot += value.ot;
+    }
+
     let row = worksheet.addRow([
-      format(date, "dd-MM-Y"),
+      format(date, "yyyy-MM-dd"),
       dayName,
-      value.check_in,
-      value.check_out,
+      format(value.check_in, "HH:mm"),
+      format(value.check_out, "HH:mm"),
       "",
       "",
       "",
       "",
-      value.late ? value.late : 0,
-      value.early ? value.early : 0,
-      value.work_time ? value.work_time : 0,
-      value.in_office ? value.in_office : 0,
-      value.ot ? value.ot : 0,
+      value.late ? toHourAndMinute(value.late) : 0,
+      value.early ? toHourAndMinute(value.early) : 0,
+      value.work_time ? toHourAndMinute(value.work_time) : 0,
+      value.in_office ? toHourAndMinute(value.in_office) : 0,
+      value.ot ? toHourAndMinute(value.ot) : 0,
       0,
       0,
       "",
@@ -276,7 +271,7 @@ const timeSheetDetail = async (data: DataTimeSheetDetail, fileName: string) => {
   worksheet.getCell("D4").value = cuoiTuan * 8;
   worksheet.getCell("D5").value = { formula: "D3+D4" };
 
-  worksheet.getCell("H3").value = (ot / 60).toFixed(1);
+  worksheet.getCell("H3").value = toHourAndMinute(ot);
   worksheet.getCell("L4").value = slDiTre;
   worksheet.getCell("L5").value = spDiTre;
   worksheet.getCell("P4").value = slVeSom;
@@ -362,11 +357,6 @@ const timeSheetDetail = async (data: DataTimeSheetDetail, fileName: string) => {
       bottom: { style: "thin" },
     };
   }
-  const buf = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buf], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
-  saveAs(blob, `${fileName}.xlsx`);
 };
 
 module.exports = {

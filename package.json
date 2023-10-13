@@ -27,7 +27,8 @@
     "react-slick": "^0.29.0",
     "redux": "^4.2.1",
     "sass": "^1.69.1",
-    "slick-carousel": "^1.8.1"
+    "slick-carousel": "^1.8.1",
+    "swr": "^2.2.4"
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.5",
