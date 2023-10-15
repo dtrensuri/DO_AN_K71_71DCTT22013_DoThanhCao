@@ -9,8 +9,7 @@ import axios from 'axios';
 import PaginationBar from '@/components/pagination/pagination';
 import { format, differenceInHours, isAfter, isBefore, differenceInMinutes, minutesToHours } from 'date-fns'
 import { handleTimeSheets, toHourAndMinute } from '@/controller/handleTime'
-
-const fileController = require('@/controller/fileController');
+import { exportDetailsTimeSheet } from '@/controller/fileController'
 
 
 const TimeSheet = () => {
@@ -74,13 +73,10 @@ const TimeSheet = () => {
             }).then((response: any) => {
                 if (response.data) {
                     handleTimeSheets(response.data.results).then((dataTimeSheet: any) => {
-                        console.log(dataTimeSheet);
                         setResultTimeSheet(dataTimeSheet);
                     });
                     setNumberPage(response.data.numPage);
                     setNumberRecord(response.data.total);
-                    setCurrentPage(1);
-
                 }
             });
 
@@ -114,6 +110,7 @@ const TimeSheet = () => {
                 break;
         }
     };
+
 
     const renderTimesheets = async () => {
         const dataTable = await _.map(resultTimeSheet, (rowData: any, key: any) => {
@@ -213,7 +210,7 @@ const TimeSheet = () => {
     }
 
     const handleExportData = () => {
-        fileController.exportDetailsTimeSheet(resultTimeSheet);
+        exportDetailsTimeSheet(startDateSearch, endDateSearch);
     }
 
     const handleSelectPerPage = (e: any) => {
@@ -326,13 +323,13 @@ const TimeSheet = () => {
                     </div>
                     <Container className="d-flex justify-content-center p-2">
                         <div className="btn-row">
-                            <Button className="button1 me-2" onClick={(e: any) => { callApiGetTimesheet() }}>
+                            <Button className="button1 me-2" onClick={() => { setCurrentPage(1); callApiGetTimesheet() }}>
                                 Search
                             </Button>
                             <Button className="button1 ms-2">
                                 Reset
                             </Button>
-                            <Button className="button1 ms-2" onClick={(e: any) => { handleExportData() }}>
+                            <Button className="button1 ms-2" onClick={() => { handleExportData() }}>
                                 Export Excel
                             </Button>
                         </div>
